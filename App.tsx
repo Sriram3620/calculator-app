@@ -22,13 +22,12 @@ export default function App() {
 
   const evaluateExpression = (expression: string): string => {
     const tokens = tokenize(expression);
-    console.log("tokens: ", tokens)
     const postfix = infixToPostfix(tokens);
     return evaluatePostfix(postfix).toString();
   };
 
   const tokenize = (expression: string): string[] => {
-    const regex = /(?<!\d)-?\d+(?:\.\d+)?|[+\-x/÷]/g;;
+    const regex = /(?<!\d)-?\d+(?:\.\d+)?|[+\-x/÷]/g;
     return expression.match(regex) || [];
   };
 
@@ -40,7 +39,6 @@ export default function App() {
     for (let token of tokens) {
       if (!isNaN(parseFloat(token))) {
         output.push(token);
-        console.log("output: ", output)
       } else if (token === '(') {
         stack.push(token);
       } else if (token === ')') {
@@ -146,13 +144,15 @@ export default function App() {
     } else if (label === '+/-') {
       toggleSign();
     } else {
+
+      const operators = ['+', '-', 'x', '÷','%'];
+      
       // Check if the current equation is '0'. replace with number
-      if (currentEquation === '0') {
+      if (currentEquation === '0' && !operators.includes(label)) {
         setCurrentEquation(label);
         return;
       }
       // Check if there are operators before the zero
-      const operators = ['+', '-', 'x', '÷'];
       const lastIndex = currentEquation.length - 1;
       const lastChar = currentEquation[currentEquation.length - 1];
 
@@ -166,7 +166,6 @@ export default function App() {
   };
 
   useEffect(() => {
-    console.log("after eqn: " + currentEquation);
 
     const isNegativeNumber = /^-[^+\-x÷]+$/.test(currentEquation);
     const hasOperator = /[+\-x÷]/.test(currentEquation);
