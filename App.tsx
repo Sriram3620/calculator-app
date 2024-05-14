@@ -28,7 +28,7 @@ export default function App() {
   };
 
   const tokenize = (expression: string): string[] => {
-    const regex = /(?:-?\d+\.\d+|-?\d+|-\.\d+)%?|[\+\x\/\(÷]/g;
+    const regex = /(?<!\d)-?\d+(?:\.\d+)?|[+\-x/÷]/g;;
     return expression.match(regex) || [];
   };
 
@@ -137,6 +137,12 @@ export default function App() {
     } else if (label === 'C') {
       setCurrentEquation('');
       setAnswerValue('');
+    } else if (label === '.') {
+      if (currentEquation === '' || /[+\-x/()]$/.test(currentEquation)) {
+        setCurrentEquation(currentEquation + '0.');
+      } else if (!/\.\d*$/.test(currentEquation)) {
+        setCurrentEquation(currentEquation + '.');
+      }
     } else if (label === '+/-') {
       toggleSign();
     } else {
@@ -147,10 +153,10 @@ export default function App() {
       }
       // Check if there are operators before the zero
       const operators = ['+', '-', 'x', '÷'];
-      const lastIndex = currentEquation.length-1;
-      const lastChar = currentEquation[currentEquation.length-1];
+      const lastIndex = currentEquation.length - 1;
+      const lastChar = currentEquation[currentEquation.length - 1];
 
-      if (lastChar === '0' && operators.includes(currentEquation[lastIndex-1]) ) {
+      if (lastChar === '0' && operators.includes(currentEquation[lastIndex - 1])) {
         setCurrentEquation(currentEquation.slice(0, lastIndex) + label);
         return;
       }
@@ -165,7 +171,7 @@ export default function App() {
     const isNegativeNumber = /^-[^+\-x÷]+$/.test(currentEquation);
     const hasOperator = /[+\-x÷]/.test(currentEquation);
     const endsWithOperator = /[+\-x\÷]$/.test(currentEquation);
-    
+
     if (isNegativeNumber) {
       setAnswerValue('');
       return;
@@ -182,7 +188,7 @@ export default function App() {
       setAnswerValue('Error');
     }
   }, [currentEquation]);
-  
+
   const buttonStyles: ButtonStyles = {
     view1: {
       'C': [styles.buttonRow1],
