@@ -36,7 +36,7 @@ export default function App() {
     const output: string[] = [];
     const stack: string[] = [];
 
-    for (let token of tokens) {
+    for (const token of tokens) {
       if (!isNaN(parseFloat(token))) {
         output.push(token);
       } else if (token === '(') {
@@ -169,7 +169,7 @@ export default function App() {
 
     const isNegativeNumber = /^-[^+\-x÷]+$/.test(currentEquation);
     const hasOperator = /[+\-x÷]/.test(currentEquation);
-    const endsWithOperator = /[+\-x\÷]$/.test(currentEquation);
+    const endsWithOperator = /[+\-x÷]$/.test(currentEquation);
 
     if (isNegativeNumber) {
       setAnswerValue('');
