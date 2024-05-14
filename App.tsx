@@ -146,7 +146,7 @@ export default function App() {
     } else {
 
       const operators = ['+', '-', 'x', '÷','%'];
-      
+
       // Check if the current equation is '0'. replace with number
       if (currentEquation === '0' && !operators.includes(label)) {
         setCurrentEquation(label);
@@ -156,7 +156,7 @@ export default function App() {
       const lastIndex = currentEquation.length - 1;
       const lastChar = currentEquation[currentEquation.length - 1];
 
-      if (lastChar === '0' && operators.includes(currentEquation[lastIndex - 1])) {
+      if (lastChar === '0' && operators.includes(currentEquation[lastIndex - 1])&& !operators.includes(label)) {
         setCurrentEquation(currentEquation.slice(0, lastIndex) + label);
         return;
       }
