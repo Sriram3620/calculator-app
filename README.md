@@ -25,7 +25,7 @@ Before running the app, make sure you have Node.js and Expo CLI installed on you
 1. **Clone the repository:**
    ```bash
    git clone https://github.com/barnabas243/calculatorApp.git
-   cd reactnative-name-badge
+   cd calculatorApp
    ```
 
 2. **Install dependencies:**
