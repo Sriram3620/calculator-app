@@ -17,17 +17,27 @@ type ButtonStyles = {
   };
 };
 
+const buttons: { [key: string]: Array<string> } = {
+  view1: ["C", "+/-", "%", "÷"],
+  view2: ["7", "8", "9", "x"],
+  view3: ["4", "5", "6", "-"],
+  view4: ["1", "2", "3", "+"],
+  view5: ["0", ".", "="],
+};
+
 export default function App() {
   const [currentEquation, setCurrentEquation] = useState<string>("");
   const [answerValue, setAnswerValue] = useState<string>("");
-
   const scrollRef = useRef();
 
   const calculateResult = () => {
     try {
+      // Attempt to evaluate the current equation and calculate the result
       const result = evaluateExpression(currentEquation);
+      // Set the answer value to the result of the evaluation as a string
       setAnswerValue(result.toString());
     } catch (error) {
+      // If an error occurs during evaluation (e.g., division by zero), set the answer value to "Error"
       setAnswerValue("Error");
     }
   };
@@ -39,55 +49,78 @@ export default function App() {
   };
 
   const tokenize = (expression: string): string[] => {
+    // Regular expression to tokenize a mathematical expression:
+    // (?<!\d)    - Negative lookbehind assertion ensuring the match is not preceded by a digit.
+    //              Prevents matching hyphens that are part of negative numbers as an arithmetic operator.
+    // -?\d+      - Matches an optional minus sign followed by one or more digits (integer part).
+    // (?:\.\d+)? - Non-capturing group for an optional decimal part (. followed by one or more digits).
+    // %?         - Matches an optional percent sign (%).
+    // [+\-x/÷]   - Matches any of the arithmetic operators: +, -, x, /, ÷.
     const regex = /(?<!\d)-?\d+(?:\.\d+)?%?|[+\-x/÷]/g;
 
+    // Use regex to tokenize the expression and return an array of tokens
     return expression.match(regex) || [];
   };
 
   const infixToPostfix = (tokens: string[]): string[] => {
+    // Operator precedence dictionary
     const precedence: { [key: string]: number } = {
       "+": 1,
       "-": 1,
       x: 2,
       "÷": 2,
     };
+
+    // Output array for postfix expression
     const output: string[] = [];
+    // Stack for operators
     const stack: string[] = [];
 
+    // Iterate through each token in the input tokens array
     for (const token of tokens) {
+      // If the token is a number, add it directly to the output
       if (!isNaN(parseFloat(token))) {
         output.push(token);
       } else {
+        // If the token is an operator
+        // Pop operators from the stack to the output until the stack is empty or the top of the stack has lower precedence than the current token
         while (
           stack.length > 0 &&
           precedence[token] <= precedence[stack[stack.length - 1]]
         ) {
           output.push(stack.pop()!);
         }
+        // Push the current token onto the stack
         stack.push(token);
       }
     }
 
+    // Pop all remaining operators from the stack to the output
     while (stack.length > 0) {
       output.push(stack.pop()!);
     }
 
+    // Return the postfix expression in the form of an array of tokens
     return output;
   };
 
   const evaluatePostfix = (postfix: string[]): number => {
-    const stack: number[] = [];
+    const stack: number[] = []; // Stack to hold operands during evaluation
 
     for (let token of postfix) {
-      // console.log("token:",token);
+      // Handle percentage calculation if token includes "%"
       if (token.includes("%") && !isNaN(parseFloat(token))) {
-        token = (parseFloat(token) / 100).toString();
+        token = (parseFloat(token) / 100).toString(); // Convert percentage to decimal
       }
+
       if (!isNaN(parseFloat(token))) {
+        // If token is a number, push it to the stack as a float
         stack.push(parseFloat(token));
       } else {
-        const operand2 = stack.pop()!;
-        const operand1 = stack.pop()!;
+        // If token is an operator
+        const operand2 = stack.pop()!; // Pop the top operand (second operand in postfix evaluation)
+        const operand1 = stack.pop()!; // Pop the next operand (first operand in postfix evaluation)
+
         switch (token) {
           case "+":
             stack.push(operand1 + operand2);
@@ -99,6 +132,7 @@ export default function App() {
             stack.push(operand1 * operand2);
             break;
           case "÷":
+            // Check for division by zero
             if (operand2 === 0) throw new Error("Division by zero");
             stack.push(operand1 / operand2);
             break;
@@ -108,8 +142,10 @@ export default function App() {
       }
     }
 
+    // After evaluating all tokens, there should be exactly one value left in the stack, which is the result
     if (stack.length !== 1) throw new Error("Invalid expression");
-    return stack.pop()!;
+
+    return stack.pop()!; // Return the final result from the stack
   };
 
   const toggleSign = () => {
@@ -141,31 +177,38 @@ export default function App() {
 
   const buttonPressed = (label: string) => {
     if (label === "=") {
-      // calculateResult();
+      // If there's a calculated answer, replace current equation with the answer and clear answer value
       if (answerValue !== "") {
         setCurrentEquation(answerValue);
         setAnswerValue("");
       }
     } else if (label === "C") {
+      // Reset current equation and clear answer value
       setCurrentEquation("");
       setAnswerValue("");
     } else if (label === ".") {
+      // Add decimal point to current equation based on certain conditions
       if (currentEquation === "" || /[+\-x/()]$/.test(currentEquation)) {
+        // If current equation is empty or ends with an operator, append "0." (start new decimal)
         setCurrentEquation(currentEquation + "0.");
       } else if (!/\.\d*$/.test(currentEquation)) {
+        // If there's no decimal already, append a decimal point
         setCurrentEquation(currentEquation + ".");
       }
     } else if (label === "+/-") {
+      // Toggle the sign of the last number in the current equation
       toggleSign();
     } else {
       const operators = ["+", "-", "x", "÷", "%"];
 
-      // Check if the current equation is '0'. replace with number
+      // Check if the current equation is '0'. Replace with number
       if (currentEquation === "0" && !operators.includes(label)) {
+        // If current equation is '0' and label is not an operator, replace '0' with the label
         setCurrentEquation(label);
         return;
       }
-      // Check if there are operators before the zero
+
+      // Check if there's a '0' preceded by an operator
       const lastIndex = currentEquation.length - 1;
       const lastChar = currentEquation[currentEquation.length - 1];
 
@@ -174,10 +217,12 @@ export default function App() {
         operators.includes(currentEquation[lastIndex - 1]) &&
         !operators.includes(label)
       ) {
+        // If there's a '0' preceded by an operator and the label is not an operator, replace '0' with the label
         setCurrentEquation(currentEquation.slice(0, lastIndex) + label);
         return;
       }
 
+      // Otherwise, append the label to the current equation
       setCurrentEquation(currentEquation + label);
     }
   };
@@ -205,6 +250,13 @@ export default function App() {
       setAnswerValue("Error");
     }
   }, [currentEquation]);
+
+  const handleDelPress = () => {
+    // Get the remaining equation by removing the last character from currentEquation
+    const remainingEquation: string = currentEquation.slice(0, -1);
+
+    setCurrentEquation(remainingEquation);
+  };
 
   const buttonStyles: ButtonStyles = {
     view1: {
@@ -236,20 +288,6 @@ export default function App() {
       ".": [styles.button],
       "=": [styles.button, styles.buttonBlue],
     },
-  };
-
-  const buttons: { [key: string]: Array<string> } = {
-    view1: ["C", "+/-", "%", "÷"],
-    view2: ["7", "8", "9", "x"],
-    view3: ["4", "5", "6", "-"],
-    view4: ["1", "2", "3", "+"],
-    view5: ["0", ".", "="],
-  };
-
-  const handleDelPress = () => {
-    const remainingEquation: string = currentEquation.slice(0, -1); // Remove last character
-    console.log("Remaining Equation:", remainingEquation);
-    setCurrentEquation(remainingEquation);
   };
 
   return (

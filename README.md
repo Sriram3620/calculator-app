@@ -2,7 +2,9 @@
 
 Submission for CM3050 Graded Assignment **3.201 Creating a calculator**.
 
-This project demonstrates a simple React Native calculator application that allows users to perform basic arithmetic operations.
+This project demonstrates a React Native calculator application that follows the [Reverse Polish Notation](https://mathworld.wolfram.com/ReversePolishNotation.html) methodology for parsing expressions, converting to postfix notation for evaluation, and handling basic operations like addition,subtraction, multiplication, division, and percentage calculations.
+
+
 
 ## Table of Contents
 - [Preview](#preview)
