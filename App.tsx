@@ -1,351 +1,435 @@
-import React, { useState, useEffect, useRef } from "react";
-import { StatusBar } from "expo-status-bar";
+import React, { useEffect, useRef, useState } from "react";
 import {
   StyleSheet,
-  ImageBackground,
   View,
   Text,
-  Dimensions,
-  Animated,
-  Easing,
   TouchableOpacity,
   SafeAreaView,
+  Dimensions,
+  ScrollView,
 } from "react-native";
+import { FontAwesome6 } from "@expo/vector-icons";
+import { StatusBar } from "expo-status-bar";
 
-const gradientColors = ["#1037e5", "#B38DFD", "#9456FE", "#6305fc"];
+type ButtonStyles = {
+  [key: string]: {
+    [key: string]: Array<import("react-native").ViewStyle>;
+  };
+};
 
-const image = require("./assets/background.jpg");
+const buttons: { [key: string]: Array<string> } = {
+  view1: ["C", "+/-", "%", "÷"],
+  view2: ["7", "8", "9", "x"],
+  view3: ["4", "5", "6", "-"],
+  view4: ["1", "2", "3", "+"],
+  view5: ["0", ".", "="],
+};
 
 export default function App() {
-  // Initialize the Tic-Tac-Toe board as a 3x3 matrix
-  const [board, setBoard] = useState<string[][]>([
-    ["◯", "◯", "◯"],
-    ["X", "◯", "X"],
-    ["◯", "X", "X"],
-  ]);
+  const [currentEquation, setCurrentEquation] = useState<string>("");
+  const [answerValue, setAnswerValue] = useState<string>("");
+  const scrollRef = useRef();
 
-  // Track the current player (X or ◯)
-  const [currentPlayer, setCurrentPlayer] = useState<"X" | "◯">("X");
-
-  // Track if the game is over
-  const [gameOver, setGameOver] = useState<boolean>(false);
-
-  // Track window dimensions
-  const [dimensions, setDimensions] = useState(Dimensions.get("window"));
-
-  // add an onchange listener to the Dimensions
-  useEffect(() => {
-    const updateDimensions = () => {
-      setDimensions(Dimensions.get("window"));
-    };
-
-    Dimensions.addEventListener("change", updateDimensions);
-
-    return () => {
-      window.removeEventListener("resize", updateDimensions);
-    };
-  }, []);
-
-  // Animated border styles
-  const animatedValue = useRef(new Animated.Value(0)).current;
-
-  // useEffect to start and loop the animation using Animated API
-  useEffect(() => {
-    const startAnimation = () => {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(animatedValue, {
-            toValue: 1,
-            duration: 5000,
-            easing: Easing.linear,
-            useNativeDriver: false,
-          }),
-          Animated.timing(animatedValue, {
-            toValue: 0,
-            duration: 5000,
-            easing: Easing.linear,
-            useNativeDriver: false,
-          }),
-        ])
-      ).start();
-    };
-
-    startAnimation();
-  }, [animatedValue]);
-
-  const borderColor = animatedValue.interpolate({
-    inputRange: [0, 0.33, 0.66, 1],
-    outputRange: gradientColors,
-  });
-
-  // Function to handle a move on the board
-  const handleMove = (row: number, col: number) => {
-    // If the game is over, do nothing
-    if (gameOver) return;
-
-    // Make a copy of the current board
-    let newBoard = [...board];
-
-    // Check if the selected cell is empty
-    if (newBoard[row][col] === "") {
-      // Update the value at the selected position with the current player's mark
-      newBoard[row][col] = currentPlayer;
-
-      // Check for winning condition
-      if (checkWinner(newBoard, row, col, currentPlayer)) {
-        alert(`Player ${currentPlayer} wins!`);
-        setGameOver(true); // Mark the game as over
-        return;
-      }
-
-      // Check for draw condition
-      if (checkDraw(newBoard)) {
-        alert("It's a draw!");
-        setGameOver(true); // Mark the game as over
-        return;
-      }
-
-      // Alternate between X and O for the next move
-      setCurrentPlayer(currentPlayer === "X" ? "◯" : "X");
-
-      // Update the state with the new board
-      setBoard(newBoard);
+  const calculateResult = () => {
+    try {
+      // Attempt to evaluate the current equation and calculate the result
+      const result = evaluateExpression(currentEquation);
+      // Set the answer value to the result of the evaluation as a string
+      setAnswerValue(result.toString());
+    } catch (error) {
+      // If an error occurs during evaluation (e.g., division by zero), set the answer value to "Error"
+      setAnswerValue("Error");
     }
   };
-  // Function to check for winning condition
-  const checkWinner = (board: string[][], row: number, col: number, currentPlayer: string) => {
-    // Check for horizontal line
-    if (
-      board[row][0] === currentPlayer &&
-      board[row][1] === currentPlayer &&
-      board[row][2] === currentPlayer
-    ) {
-      return true;
-    }
-    // Check for vertical line
-    if (
-      board[0][col] === currentPlayer &&
-      board[1][col] === currentPlayer &&
-      board[2][col] === currentPlayer
-    ) {
-      return true;
-    }
-    // Check for diagonal line (top-left to bottom-right)
-    if (
-      (board[0][0] === currentPlayer &&
-        board[1][1] === currentPlayer &&
-        board[2][2] === currentPlayer) ||
-      // Check for diagonal line (top-right to bottom-left)
-      (board[0][2] === currentPlayer &&
-        board[1][1] === currentPlayer &&
-        board[2][0] === currentPlayer)
-    ) {
-      return true;
-    }
-    return false;
+
+  const evaluateExpression = (expression: string): string => {
+    const tokens = tokenize(expression);
+    const postfix = infixToPostfix(tokens);
+    return evaluatePostfix(postfix).toString();
   };
 
-  // Function to check for draw condition
-  const checkDraw = (board: string[][]) => {
-    for (let row of board) {
-      for (let cell of row) {
-        if (cell === "") {
-          return false; // Grid is not full
+  const tokenize = (expression: string): string[] => {
+    // Regular expression to tokenize a mathematical expression:
+    // (?<!\d)    - Negative lookbehind assertion ensuring the match is not preceded by a digit.
+    //              Prevents matching hyphens that are part of negative numbers as an arithmetic operator.
+    // -?\d+      - Matches an optional minus sign followed by one or more digits (integer part).
+    // (?:\.\d+)? - Non-capturing group for an optional decimal part (. followed by one or more digits).
+    // %?         - Matches an optional percent sign (%).
+    // [+\-x/÷]   - Matches any of the arithmetic operators: +, -, x, /, ÷.
+    const regex = /(?<!\d)-?\d+(?:\.\d+)?%?|[+\-x/÷]/g;
+
+    // Use regex to tokenize the expression and return an array of tokens
+    return expression.match(regex) || [];
+  };
+
+  const infixToPostfix = (tokens: string[]): string[] => {
+    // Operator precedence dictionary
+    const precedence: { [key: string]: number } = {
+      "+": 1,
+      "-": 1,
+      "x": 2,
+      "÷": 2,
+    };
+
+    // Output array for postfix expression
+    const output: string[] = [];
+    // Stack for operators
+    const stack: string[] = [];
+
+    // Iterate through each token in the input tokens array
+    for (const token of tokens) {
+      // If the token is a number, add it directly to the output
+      if (!isNaN(parseFloat(token))) {
+        output.push(token);
+      } else {
+        // If the token is an operator
+        // Pop operators from the stack to the output until the stack is empty or the top of the stack has lower precedence than the current token
+        while (
+          stack.length > 0 &&
+          precedence[token] <= precedence[stack[stack.length - 1]]
+        ) {
+          output.push(stack.pop()!);
         }
+        // Push the current token onto the stack
+        stack.push(token);
       }
     }
-    return true; // Grid is full
+
+    // Pop all remaining operators from the stack to the output
+    while (stack.length > 0) {
+      output.push(stack.pop()!);
+    }
+
+    // Return the postfix expression in the form of an array of tokens
+    return output;
   };
 
-  // Function to reset the board
-  const resetBoard = () => {
-    setBoard([
-      ["", "", ""],
-      ["", "", ""],
-      ["", "", ""],
-    ]);
-    setCurrentPlayer("X"); // Reset the current player to X
-    setGameOver(false); // Mark the game as not over
+  const evaluatePostfix = (postfix: string[]): number => {
+    const stack: number[] = []; // Stack to hold operands during evaluation
+
+    for (let token of postfix) {
+      // Handle percentage calculation if token includes "%"
+      if (token.includes("%") && !isNaN(parseFloat(token))) {
+        token = (parseFloat(token) / 100).toString(); // Convert percentage to decimal
+      }
+
+      if (!isNaN(parseFloat(token))) {
+        // If token is a number, push it to the stack as a float
+        stack.push(parseFloat(token));
+      } else {
+        // If token is an operator
+        const operand2 = stack.pop()!; // Pop the top operand (second operand in postfix evaluation)
+        const operand1 = stack.pop()!; // Pop the next operand (first operand in postfix evaluation)
+
+        let result: number;
+
+        switch (token) {
+          case "+":
+            result = operand1 + operand2;
+            break;
+          case "-":
+            result = operand1 - operand2;
+            break;
+          case "x":
+            result = operand1 * operand2;
+            break;
+          case "÷":
+            if (operand2 === 0) throw new Error("Division by zero");
+            result = operand1 / operand2;
+            break;
+          default:
+            throw new Error("Invalid operator");
+        }
+
+        // Convert result to string with up to 12 decimal places to avoid floating-point arithmetic issues
+        const resultString = result.toFixed(12);
+
+        // Parse the string back to number and push it to stack. Number() removes excess trailing zeros.
+        stack.push(Number(resultString));
+      }
+    }
+
+    // After evaluating all tokens, there should be exactly one value left in the stack, which is the result
+    if (stack.length !== 1) throw new Error("Invalid expression");
+
+    return stack.pop()!; // Return the final result from the stack
   };
 
-  // Render the board
-  const renderBoard = () => {
-    // Calculate the maximum height for the board
-    const maxBoardHeight = dimensions.height * 0.6;
+  const toggleSign = () => {
+    if (currentEquation) {
+      // Regular expression to match numbers (with optional decimal points)
+      const numberRegex = /-?\d+(\.\d+)?/g;
+      let lastIndex = -1;
+      let lastMatch = null;
 
-    // Calculate a dynamic margin based on screen width
-    const marginWidth = dimensions.width * 0.2; // 20% of screen width as margin
+      // Iterate through matches to find the last one
+      let match;
+      while ((match = numberRegex.exec(currentEquation)) !== null) {
+        lastIndex = match.index;
+        lastMatch = match[0];
+      }
 
-    // Dynamically subtract the margin from the width of the screen
-    const windowWidth = dimensions.width - marginWidth;
+      // If a number is found, toggle its sign
+      if (lastMatch !== null) {
+        const updatedEquation =
+          currentEquation.substring(0, lastIndex) +
+          (lastMatch.startsWith("-")
+            ? lastMatch.substring(1)
+            : "-" + lastMatch) +
+          currentEquation.substring(lastIndex + lastMatch.length);
+        setCurrentEquation(updatedEquation);
+      }
+    }
+  };
 
-    // Calculate cell size based on the minimum of width and height
-    const cellSize = Math.min(windowWidth, maxBoardHeight) / 3;
+  const buttonPressed = (label: string) => {
+    if (label === "=") {
+      // If there's a calculated answer, replace current equation with the answer and clear answer value
+      if (answerValue !== "") {
+        setCurrentEquation(answerValue);
+        setAnswerValue("");
+      }
+    } else if (label === "C") {
+      // Reset current equation and clear answer value
+      setCurrentEquation("");
+      setAnswerValue("");
+    } else if (label === ".") {
+      // Add decimal point to current equation based on certain conditions
+      if (currentEquation === "" || /[+\-x/()]$/.test(currentEquation)) {
+        // If current equation is empty or ends with an operator, append "0." (start new decimal)
+        setCurrentEquation(currentEquation + "0.");
+      } else if (!/\.\d*$/.test(currentEquation)) {
+        // If there's no decimal already, append a decimal point
+        setCurrentEquation(currentEquation + ".");
+      }
+    } else if (label === "+/-") {
+      // Toggle the sign of the last number in the current equation
+      toggleSign();
+    } else {
+      const operators = ["+", "-", "x", "÷", "%"];
 
-    return board.map((row, rowIndex) => (
-      <SafeAreaView key={rowIndex} style={[styles.row, { height: cellSize }]}>
-        {row.map((cell, colIndex) => {
-          let borderStyle = {};
-          if (rowIndex === 1 && colIndex === 1) {
-            borderStyle = styles.boxFullBorder;
-          } else if (
-            (rowIndex === 0 && colIndex === 1) ||
-            (rowIndex === 2 && colIndex === 1)
-          ) {
-            borderStyle = styles.boxLeftRightBorder;
-          } else if (rowIndex === 1 && (colIndex === 0 || colIndex === 2)) {
-            borderStyle = styles.boxTopBottomBorder;
-          }
-          return (
+      // Check if the current equation is '0'. Replace with number
+      if (currentEquation === "0" && !operators.includes(label)) {
+        // If current equation is '0' and label is not an operator, replace '0' with the label
+        setCurrentEquation(label);
+        return;
+      }
+
+      // Check if there's a '0' preceded by an operator
+      const lastIndex = currentEquation.length - 1;
+      const lastChar = currentEquation[currentEquation.length - 1];
+
+      if (
+        lastChar === "0" &&
+        operators.includes(currentEquation[lastIndex - 1]) &&
+        !operators.includes(label)
+      ) {
+        // If there's a '0' preceded by an operator and the label is not an operator, replace '0' with the label
+        setCurrentEquation(currentEquation.slice(0, lastIndex) + label);
+        return;
+      }
+
+      // Otherwise, append the label to the current equation
+      setCurrentEquation(currentEquation + label);
+    }
+  };
+
+  useEffect(() => {
+    const isNegativeNumber = /^-[^+\-x÷]+$/.test(currentEquation);
+    const hasOperator = /[+\-x÷]/.test(currentEquation);
+    const endsWithOperator = /[+\-x÷]$/.test(currentEquation);
+
+    // hide answer text if the equation only contains a negative number
+    if (isNegativeNumber) {
+      setAnswerValue("");
+      return;
+    }
+    // if equation contains only numbers or ends with an operator
+    if (!hasOperator || endsWithOperator) {
+      setAnswerValue("");
+      return;
+    }
+
+    // If it's a valid equation, calculate the result
+    try {
+      calculateResult();
+    } catch (error) {
+      setAnswerValue("Error");
+    }
+  }, [currentEquation]);
+
+  const handleDelPress = () => {
+    // Get the remaining equation by removing the last character from currentEquation
+    const remainingEquation: string = currentEquation.slice(0, -1);
+
+    setCurrentEquation(remainingEquation);
+  };
+
+  const buttonStyles: ButtonStyles = {
+    view1: {
+      C: [styles.buttonRow1],
+      "+/-": [styles.buttonRow1],
+      "%": [styles.buttonRow1],
+      "÷": [styles.button, styles.buttonBlue],
+    },
+    view2: {
+      "7": [styles.button],
+      "8": [styles.button],
+      "9": [styles.button],
+      x: [styles.button, styles.buttonBlue],
+    },
+    view3: {
+      "4": [styles.button],
+      "5": [styles.button],
+      "6": [styles.button],
+      "-": [styles.button, styles.buttonBlue],
+    },
+    view4: {
+      "1": [styles.button],
+      "2": [styles.button],
+      "3": [styles.button],
+      "+": [styles.button, styles.buttonBlue],
+    },
+    view5: {
+      "0": [styles.button, styles.buttonZero],
+      ".": [styles.button],
+      "=": [styles.button, styles.buttonBlue],
+    },
+  };
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <StatusBar hidden />
+      <ScrollView
+        ref={scrollRef}
+        style={styles.scrollViewContent}
+        onContentSizeChange={() => scrollRef.current.scrollToEnd()}
+      >
+        <View style={styles.displayEqnContainer}>
+          <Text style={styles.displayText}>{currentEquation}</Text>
+        </View>
+      </ScrollView>
+      <View style={styles.displayAnsContainer}>
+        <Text style={styles.greyedText}>{answerValue}</Text>
+      </View>
+      <View style={styles.rightDelContainer}>
+        <TouchableOpacity onPress={handleDelPress}>
+          <FontAwesome6 name="delete-left" size={30} color="white" />
+        </TouchableOpacity>
+      </View>
+      {Object.keys(buttons).map((viewKey, index) => (
+        <View key={index} style={styles.row}>
+          {buttons[viewKey].map((label, index) => (
             <TouchableOpacity
-              key={colIndex}
-              style={[
-                styles.col,
-                borderStyle,
-                { width: cellSize, height: cellSize },
-              ]}
-              onPress={() => handleMove(rowIndex, colIndex)}
-              disabled={cell !== "" || gameOver}
+              key={index}
+              style={[styles.button, ...buttonStyles[viewKey][label]]}
+              onPress={() => buttonPressed(label)}
             >
               <Text
                 style={[
-                  { fontSize: cellSize * 0.5 }, // Adjust font size based on cell size
-                  cell === "X" ? styles.blueGlow : styles.redGlow,
+                  styles.buttonText,
+                  buttonStyles[viewKey][label].includes(styles.button) &&
+                  label === "0"
+                    ? styles.buttonTextZero
+                    : styles.buttonTextWhite,
                 ]}
               >
-                {cell}
+                {label}
               </Text>
             </TouchableOpacity>
-          );
-        })}
-      </SafeAreaView>
-    ));
-  };
-
-  // get the smallest size between the screen width and height
-  // prevent scaling issue when user only expands 1 dimension
-  const adjustedSizing = Math.min(dimensions.width, dimensions.height);
-
-  return (
-    <View style={styles.container}>
-      <StatusBar hidden />
-      <ImageBackground source={image} resizeMode="cover" style={styles.image}>
-        <Animated.View
-          style={[
-            styles.innerContainer,
-            {
-              borderColor,
-              borderRadius: adjustedSizing * 0.05,
-              borderWidth: adjustedSizing * 0.006,
-              padding: adjustedSizing * 0.04,
-            },
-          ]}
-        >
-          {renderBoard()}
-          <TouchableOpacity
-            style={[
-              styles.resetButton,
-              {
-                paddingVertical: adjustedSizing * 0.02,
-                paddingHorizontal: adjustedSizing * 0.05,
-                marginTop: adjustedSizing * 0.04,
-              },
-            ]}
-            onPress={resetBoard}
-          >
-            <Text
-              style={[
-                styles.resetButtonText,
-                { fontSize: adjustedSizing * 0.05 },
-              ]}
-            >
-              Reset
-            </Text>
-          </TouchableOpacity>
-          <Text
-            style={[
-              styles.smallText,
-              {
-                marginTop: adjustedSizing * 0.02,
-                fontSize: adjustedSizing * 0.03,
-              },
-            ]}
-          >
-            Tap <Text style={styles.boldText}>reset</Text> to play
-          </Text>
-        </Animated.View>
-      </ImageBackground>
-    </View>
+          ))}
+        </View>
+      ))}
+    </SafeAreaView>
   );
 }
+
+const windowHeight = Dimensions.get("window").height;
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor: "#000",
+    paddingHorizontal: 8,
+    paddingBottom: 8,
   },
-  image: {
+  scrollViewContent: {
+    minHeight: windowHeight / 2 / 2.5, // Minimum height before scrolling is enabled
     flex: 1,
-    width: "100%",
-    height: "100%",
-    justifyContent: "center",
-    alignItems: "center",
   },
-  innerContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#000000d0",
+  displayEqnContainer: {
+    justifyContent: "flex-start", // Align content to start from top
+    alignItems: "flex-end", // Align content to end (right side)
+    marginRight: 20,
+    paddingHorizontal: 10,
+    // backgroundColor: "blue",
+  },
+  displayAnsContainer: {
+    flex: 2.5,
+    justifyContent: "flex-end",
+    alignItems: "flex-end",
+    marginRight: 20,
+    // backgroundColor: "blue",
+  },
+  rightDelContainer: {
+    flex: 1,
+    justifyContent: "flex-end",
+    alignItems: "flex-end",
+    padding: 30,
+  },
+  displayText: {
+    fontSize: 45,
+    color: "#fff",
+  },
+  greyedText: {
+    fontSize: 32,
+    color: "#fff",
+    opacity: 0.7,
+    marginHorizontal: 8,
   },
   row: {
     flexDirection: "row",
+    marginBottom: 8,
   },
-  col: {
-    aspectRatio: 1,
-    alignItems: "center",
+  button: {
+    flex: 1,
     justifyContent: "center",
-    alignContent: "center",
+    alignItems: "center",
+    backgroundColor: "#454545",
+    marginHorizontal: 8,
+    height: windowHeight / 2 / 5,
+    borderRadius: 40,
   },
-  boxFullBorder: {
-    borderWidth: 2,
-    borderColor: "#fff",
+  buttonRow1: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#A9A9A9",
+    marginHorizontal: 8,
+    height: windowHeight / 2 / 5,
+    borderRadius: 40,
   },
-  boxTopBottomBorder: {
-    borderTopColor: "#fff",
-    borderTopWidth: 2,
-    borderBottomColor: "#fff",
-    borderBottomWidth: 2,
+  buttonBlue: {
+    backgroundColor: "#2B65EC",
   },
-  boxLeftRightBorder: {
-    borderRightColor: "#fff",
-    borderRightWidth: 2,
-    borderLeftColor: "#fff",
-    borderLeftWidth: 2,
+  buttonText: {
+    fontSize: 24,
+    color: "#000",
   },
-  redGlow: {
-    color: "#ea5b5b",
-    textShadowColor: "#b22222",
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 10,
+  buttonTextSecondary: {
+    color: "#888",
   },
-  blueGlow: {
-    color: "#45bbd8",
-    textShadowColor: "#00f",
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 10,
+  buttonTextWhite: {
+    color: "#fff",
   },
-  resetButton: {
-    backgroundColor: "#6305fc",
+  buttonZero: {
+    flex: 2.2,
+    justifyContent: "center",
+    alignItems: "flex-start",
   },
-  resetButtonText: {
-    color: "#ccc",
-  },
-  smallText: {
-    color: "#ccc",
-  },
-  boldText: {
-    color: "#6999fc",
-    fontWeight: "bold",
+  buttonTextZero: {
+    textAlign: "left",
+    color: "#fff",
+    paddingLeft: 40,
   },
 });
- 
