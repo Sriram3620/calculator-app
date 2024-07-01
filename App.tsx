@@ -24,7 +24,7 @@ export default function App() {
     ["◯", "X", "X"],
   ]);
 
-  // Track the current player (X or O)
+  // Track the current player (X or ◯)
   const [currentPlayer, setCurrentPlayer] = useState<"X" | "◯">("X");
 
   // Track if the game is over
@@ -33,6 +33,7 @@ export default function App() {
   // Track window dimensions
   const [dimensions, setDimensions] = useState(Dimensions.get("window"));
 
+  // add an onchange listener to the Dimensions
   useEffect(() => {
     const updateDimensions = () => {
       setDimensions(Dimensions.get("window"));
@@ -48,6 +49,7 @@ export default function App() {
   // Animated border styles
   const animatedValue = useRef(new Animated.Value(0)).current;
 
+  // useEffect to start and loop the animation using Animated API
   useEffect(() => {
     const startAnimation = () => {
       Animated.loop(
@@ -208,7 +210,7 @@ export default function App() {
               <Text
                 style={[
                   { fontSize: cellSize * 0.5 }, // Adjust font size based on cell size
-                  cell === "X" ? styles.blueText : styles.redText,
+                  cell === "X" ? styles.blueGlow : styles.redGlow,
                 ]}
               >
                 {cell}
@@ -320,13 +322,13 @@ const styles = StyleSheet.create({
     borderLeftColor: "#fff",
     borderLeftWidth: 2,
   },
-  redText: {
+  redGlow: {
     color: "#ea5b5b",
     textShadowColor: "#b22222",
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 10,
   },
-  blueText: {
+  blueGlow: {
     color: "#45bbd8",
     textShadowColor: "#00f",
     textShadowOffset: { width: 0, height: 0 },
@@ -346,3 +348,4 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
 });
+ 
