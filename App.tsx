@@ -1,3 +1,6 @@
+// Author: Barnabas Tan
+// Code was written by Author
+
 import React, { useEffect, useRef, useState } from "react";
 import {
   StyleSheet,
@@ -10,12 +13,7 @@ import {
 } from "react-native";
 import { FontAwesome6 } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
-
-type ButtonStyles = {
-  [key: string]: {
-    [key: string]: Array<import("react-native").ViewStyle>;
-  };
-};
+import { ButtonStyles } from "./types";
 
 const buttons: { [key: string]: Array<string> } = {
   view1: ["C", "+/-", "%", "÷"],
@@ -28,7 +26,7 @@ const buttons: { [key: string]: Array<string> } = {
 export default function App() {
   const [currentEquation, setCurrentEquation] = useState<string>("");
   const [answerValue, setAnswerValue] = useState<string>("");
-  const scrollRef = useRef();
+  const scrollRef = useRef<ScrollView>(null);
 
   const calculateResult = () => {
     try {
@@ -67,7 +65,7 @@ export default function App() {
     const precedence: { [key: string]: number } = {
       "+": 1,
       "-": 1,
-      "x": 2,
+      x: 2,
       "÷": 2,
     };
 
@@ -303,7 +301,11 @@ export default function App() {
       <ScrollView
         ref={scrollRef}
         style={styles.scrollViewContent}
-        onContentSizeChange={() => scrollRef.current.scrollToEnd()}
+        onContentSizeChange={() => {
+          if (scrollRef.current) {
+            scrollRef.current.scrollToEnd();
+          }
+        }}
       >
         <View style={styles.displayEqnContainer}>
           <Text style={styles.displayText}>{currentEquation}</Text>
