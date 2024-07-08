@@ -1,5 +1,5 @@
 export type ButtonStyles = {
   [key: string]: {
-    [key: string]: Array<import("react-native").ViewStyle>;
+    [key: string]: import('react-native').ViewStyle[];
   };
 };

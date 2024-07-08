@@ -1,7 +1,7 @@
 // Author: Barnabas Tan
 // Code was written by Author
 
-import React, { useEffect, useRef, useState } from "react";
+import React, {useEffect, useRef, useState} from 'react';
 import {
   StyleSheet,
   View,
@@ -10,22 +10,22 @@ import {
   SafeAreaView,
   Dimensions,
   ScrollView,
-} from "react-native";
-import { FontAwesome6 } from "@expo/vector-icons";
-import { StatusBar } from "expo-status-bar";
-import { ButtonStyles } from "./types";
+} from 'react-native';
+import {FontAwesome6} from '@expo/vector-icons';
+import {StatusBar} from 'expo-status-bar';
+import {ButtonStyles} from './types';
 
-const buttons: { [key: string]: Array<string> } = {
-  view1: ["C", "+/-", "%", "÷"],
-  view2: ["7", "8", "9", "x"],
-  view3: ["4", "5", "6", "-"],
-  view4: ["1", "2", "3", "+"],
-  view5: ["0", ".", "="],
+const buttons: {[key: string]: string[]} = {
+  view1: ['C', '+/-', '%', '÷'],
+  view2: ['7', '8', '9', 'x'],
+  view3: ['4', '5', '6', '-'],
+  view4: ['1', '2', '3', '+'],
+  view5: ['0', '.', '='],
 };
 
 export default function App() {
-  const [currentEquation, setCurrentEquation] = useState<string>("");
-  const [answerValue, setAnswerValue] = useState<string>("");
+  const [currentEquation, setCurrentEquation] = useState('');
+  const [answerValue, setAnswerValue] = useState('');
   const scrollRef = useRef<ScrollView>(null);
 
   const calculateResult = () => {
@@ -35,18 +35,19 @@ export default function App() {
       // Set the answer value to the result of the evaluation as a string
       setAnswerValue(result.toString());
     } catch (error) {
+      console.log(error);
       // If an error occurs during evaluation (e.g., division by zero), set the answer value to "Error"
-      setAnswerValue("Error");
+      setAnswerValue('Error');
     }
   };
 
-  const evaluateExpression = (expression: string): string => {
+  const evaluateExpression = (expression: string) => {
     const tokens = tokenize(expression);
     const postfix = infixToPostfix(tokens);
     return evaluatePostfix(postfix).toString();
   };
 
-  const tokenize = (expression: string): string[] => {
+  const tokenize = (expression: string) => {
     // Regular expression to tokenize a mathematical expression:
     // (?<!\d)    - Negative lookbehind assertion ensuring the match is not preceded by a digit.
     //              Prevents matching hyphens that are part of negative numbers as an arithmetic operator.
@@ -60,13 +61,13 @@ export default function App() {
     return expression.match(regex) || [];
   };
 
-  const infixToPostfix = (tokens: string[]): string[] => {
+  const infixToPostfix = (tokens: string[]) => {
     // Operator precedence dictionary
-    const precedence: { [key: string]: number } = {
-      "+": 1,
-      "-": 1,
+    const precedence: {[key: string]: number} = {
+      '+': 1,
+      '-': 1,
       x: 2,
-      "÷": 2,
+      '÷': 2,
     };
 
     // Output array for postfix expression
@@ -82,10 +83,7 @@ export default function App() {
       } else {
         // If the token is an operator
         // Pop operators from the stack to the output until the stack is empty or the top of the stack has lower precedence than the current token
-        while (
-          stack.length > 0 &&
-          precedence[token] <= precedence[stack[stack.length - 1]]
-        ) {
+        while (stack.length > 0 && precedence[token] <= precedence[stack[stack.length - 1]]) {
           output.push(stack.pop()!);
         }
         // Push the current token onto the stack
@@ -102,12 +100,12 @@ export default function App() {
     return output;
   };
 
-  const evaluatePostfix = (postfix: string[]): number => {
+  const evaluatePostfix = (postfix: string[]) => {
     const stack: number[] = []; // Stack to hold operands during evaluation
 
     for (let token of postfix) {
       // Handle percentage calculation if token includes "%"
-      if (token.includes("%") && !isNaN(parseFloat(token))) {
+      if (token.includes('%') && !isNaN(parseFloat(token))) {
         token = (parseFloat(token) / 100).toString(); // Convert percentage to decimal
       }
 
@@ -122,21 +120,21 @@ export default function App() {
         let result: number;
 
         switch (token) {
-          case "+":
+          case '+':
             result = operand1 + operand2;
             break;
-          case "-":
+          case '-':
             result = operand1 - operand2;
             break;
-          case "x":
+          case 'x':
             result = operand1 * operand2;
             break;
-          case "÷":
-            if (operand2 === 0) throw new Error("Division by zero");
+          case '÷':
+            if (operand2 === 0) throw new Error('Division by zero');
             result = operand1 / operand2;
             break;
           default:
-            throw new Error("Invalid operator");
+            throw new Error('Invalid operator');
         }
 
         // Convert result to string with up to 12 decimal places to avoid floating-point arithmetic issues
@@ -148,7 +146,7 @@ export default function App() {
     }
 
     // After evaluating all tokens, there should be exactly one value left in the stack, which is the result
-    if (stack.length !== 1) throw new Error("Invalid expression");
+    if (stack.length !== 1) throw new Error('Invalid expression');
 
     return stack.pop()!; // Return the final result from the stack
   };
@@ -171,9 +169,7 @@ export default function App() {
       if (lastMatch !== null) {
         const updatedEquation =
           currentEquation.substring(0, lastIndex) +
-          (lastMatch.startsWith("-")
-            ? lastMatch.substring(1)
-            : "-" + lastMatch) +
+          (lastMatch.startsWith('-') ? lastMatch.substring(1) : '-' + lastMatch) +
           currentEquation.substring(lastIndex + lastMatch.length);
         setCurrentEquation(updatedEquation);
       }
@@ -181,33 +177,33 @@ export default function App() {
   };
 
   const buttonPressed = (label: string) => {
-    if (label === "=") {
+    if (label === '=') {
       // If there's a calculated answer, replace current equation with the answer and clear answer value
-      if (answerValue !== "") {
+      if (answerValue !== '') {
         setCurrentEquation(answerValue);
-        setAnswerValue("");
+        setAnswerValue('');
       }
-    } else if (label === "C") {
+    } else if (label === 'C') {
       // Reset current equation and clear answer value
-      setCurrentEquation("");
-      setAnswerValue("");
-    } else if (label === ".") {
+      setCurrentEquation('');
+      setAnswerValue('');
+    } else if (label === '.') {
       // Add decimal point to current equation based on certain conditions
-      if (currentEquation === "" || /[+\-x/()]$/.test(currentEquation)) {
+      if (currentEquation === '' || /[+\-x/()]$/.test(currentEquation)) {
         // If current equation is empty or ends with an operator, append "0." (start new decimal)
-        setCurrentEquation(currentEquation + "0.");
+        setCurrentEquation(currentEquation + '0.');
       } else if (!/\.\d*$/.test(currentEquation)) {
         // If there's no decimal already, append a decimal point
-        setCurrentEquation(currentEquation + ".");
+        setCurrentEquation(currentEquation + '.');
       }
-    } else if (label === "+/-") {
+    } else if (label === '+/-') {
       // Toggle the sign of the last number in the current equation
       toggleSign();
     } else {
-      const operators = ["+", "-", "x", "÷", "%"];
+      const operators = ['+', '-', 'x', '÷', '%'];
 
       // Check if the current equation is '0'. Replace with number
-      if (currentEquation === "0" && !operators.includes(label)) {
+      if (currentEquation === '0' && !operators.includes(label)) {
         // If current equation is '0' and label is not an operator, replace '0' with the label
         setCurrentEquation(label);
         return;
@@ -218,7 +214,7 @@ export default function App() {
       const lastChar = currentEquation[currentEquation.length - 1];
 
       if (
-        lastChar === "0" &&
+        lastChar === '0' &&
         operators.includes(currentEquation[lastIndex - 1]) &&
         !operators.includes(label)
       ) {
@@ -239,12 +235,12 @@ export default function App() {
 
     // hide answer text if the equation only contains a negative number
     if (isNegativeNumber) {
-      setAnswerValue("");
+      setAnswerValue('');
       return;
     }
     // if equation contains only numbers or ends with an operator
     if (!hasOperator || endsWithOperator) {
-      setAnswerValue("");
+      setAnswerValue('');
       return;
     }
 
@@ -252,8 +248,10 @@ export default function App() {
     try {
       calculateResult();
     } catch (error) {
-      setAnswerValue("Error");
+      console.log(error);
+      setAnswerValue('Error');
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentEquation]);
 
   const handleDelPress = () => {
@@ -266,32 +264,32 @@ export default function App() {
   const buttonStyles: ButtonStyles = {
     view1: {
       C: [styles.buttonRow1],
-      "+/-": [styles.buttonRow1],
-      "%": [styles.buttonRow1],
-      "÷": [styles.button, styles.buttonBlue],
+      '+/-': [styles.buttonRow1],
+      '%': [styles.buttonRow1],
+      '÷': [styles.button, styles.buttonBlue],
     },
     view2: {
-      "7": [styles.button],
-      "8": [styles.button],
-      "9": [styles.button],
+      '7': [styles.button],
+      '8': [styles.button],
+      '9': [styles.button],
       x: [styles.button, styles.buttonBlue],
     },
     view3: {
-      "4": [styles.button],
-      "5": [styles.button],
-      "6": [styles.button],
-      "-": [styles.button, styles.buttonBlue],
+      '4': [styles.button],
+      '5': [styles.button],
+      '6': [styles.button],
+      '-': [styles.button, styles.buttonBlue],
     },
     view4: {
-      "1": [styles.button],
-      "2": [styles.button],
-      "3": [styles.button],
-      "+": [styles.button, styles.buttonBlue],
+      '1': [styles.button],
+      '2': [styles.button],
+      '3': [styles.button],
+      '+': [styles.button, styles.buttonBlue],
     },
     view5: {
-      "0": [styles.button, styles.buttonZero],
-      ".": [styles.button],
-      "=": [styles.button, styles.buttonBlue],
+      '0': [styles.button, styles.buttonZero],
+      '.': [styles.button],
+      '=': [styles.button, styles.buttonBlue],
     },
   };
 
@@ -305,8 +303,7 @@ export default function App() {
           if (scrollRef.current) {
             scrollRef.current.scrollToEnd();
           }
-        }}
-      >
+        }}>
         <View style={styles.displayEqnContainer}>
           <Text style={styles.displayText}>{currentEquation}</Text>
         </View>
@@ -325,17 +322,14 @@ export default function App() {
             <TouchableOpacity
               key={index}
               style={[styles.button, ...buttonStyles[viewKey][label]]}
-              onPress={() => buttonPressed(label)}
-            >
+              onPress={() => buttonPressed(label)}>
               <Text
                 style={[
                   styles.buttonText,
-                  buttonStyles[viewKey][label].includes(styles.button) &&
-                  label === "0"
+                  buttonStyles[viewKey][label].includes(styles.button) && label === '0'
                     ? styles.buttonTextZero
                     : styles.buttonTextWhite,
-                ]}
-              >
+                ]}>
                 {label}
               </Text>
             </TouchableOpacity>
@@ -346,12 +340,12 @@ export default function App() {
   );
 }
 
-const windowHeight = Dimensions.get("window").height;
+const windowHeight = Dimensions.get('window').height;
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000",
+    backgroundColor: '#000',
     paddingHorizontal: 8,
     paddingBottom: 8,
   },
@@ -360,78 +354,78 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   displayEqnContainer: {
-    justifyContent: "flex-start", // Align content to start from top
-    alignItems: "flex-end", // Align content to end (right side)
+    justifyContent: 'flex-start', // Align content to start from top
+    alignItems: 'flex-end', // Align content to end (right side)
     marginRight: 20,
     paddingHorizontal: 10,
     // backgroundColor: "blue",
   },
   displayAnsContainer: {
     flex: 2.5,
-    justifyContent: "flex-end",
-    alignItems: "flex-end",
+    justifyContent: 'flex-end',
+    alignItems: 'flex-end',
     marginRight: 20,
     // backgroundColor: "blue",
   },
   rightDelContainer: {
     flex: 1,
-    justifyContent: "flex-end",
-    alignItems: "flex-end",
+    justifyContent: 'flex-end',
+    alignItems: 'flex-end',
     padding: 30,
   },
   displayText: {
     fontSize: 45,
-    color: "#fff",
+    color: '#fff',
   },
   greyedText: {
     fontSize: 32,
-    color: "#fff",
+    color: '#fff',
     opacity: 0.7,
     marginHorizontal: 8,
   },
   row: {
-    flexDirection: "row",
+    flexDirection: 'row',
     marginBottom: 8,
   },
   button: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#454545",
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#454545',
     marginHorizontal: 8,
     height: windowHeight / 2 / 5,
     borderRadius: 40,
   },
   buttonRow1: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#A9A9A9",
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#A9A9A9',
     marginHorizontal: 8,
     height: windowHeight / 2 / 5,
     borderRadius: 40,
   },
   buttonBlue: {
-    backgroundColor: "#2B65EC",
+    backgroundColor: '#2B65EC',
   },
   buttonText: {
     fontSize: 24,
-    color: "#000",
+    color: '#000',
   },
   buttonTextSecondary: {
-    color: "#888",
+    color: '#888',
   },
   buttonTextWhite: {
-    color: "#fff",
+    color: '#fff',
   },
   buttonZero: {
     flex: 2.2,
-    justifyContent: "center",
-    alignItems: "flex-start",
+    justifyContent: 'center',
+    alignItems: 'flex-start',
   },
   buttonTextZero: {
-    textAlign: "left",
-    color: "#fff",
+    textAlign: 'left',
+    color: '#fff',
     paddingLeft: 40,
   },
 });
