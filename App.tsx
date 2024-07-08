@@ -28,129 +28,6 @@ export default function App() {
   const [answerValue, setAnswerValue] = useState('');
   const scrollRef = useRef<ScrollView>(null);
 
-  const calculateResult = () => {
-    try {
-      // Attempt to evaluate the current equation and calculate the result
-      const result = evaluateExpression(currentEquation);
-      // Set the answer value to the result of the evaluation as a string
-      setAnswerValue(result.toString());
-    } catch (error) {
-      console.log(error);
-      // If an error occurs during evaluation (e.g., division by zero), set the answer value to "Error"
-      setAnswerValue('Error');
-    }
-  };
-
-  const evaluateExpression = (expression: string) => {
-    const tokens = tokenize(expression);
-    const postfix = infixToPostfix(tokens);
-    return evaluatePostfix(postfix).toString();
-  };
-
-  const tokenize = (expression: string) => {
-    // Regular expression to tokenize a mathematical expression:
-    // (?<!\d)    - Negative lookbehind assertion ensuring the match is not preceded by a digit.
-    //              Prevents matching hyphens that are part of negative numbers as an arithmetic operator.
-    // -?\d+      - Matches an optional minus sign followed by one or more digits (integer part).
-    // (?:\.\d+)? - Non-capturing group for an optional decimal part (. followed by one or more digits).
-    // %?         - Matches an optional percent sign (%).
-    // [+\-x/÷]   - Matches any of the arithmetic operators: +, -, x, /, ÷.
-    const regex = /(?<!\d)-?\d+(?:\.\d+)?%?|[+\-x/÷]/g;
-
-    // Use regex to tokenize the expression and return an array of tokens
-    return expression.match(regex) || [];
-  };
-
-  const infixToPostfix = (tokens: string[]) => {
-    // Operator precedence dictionary
-    const precedence: {[key: string]: number} = {
-      '+': 1,
-      '-': 1,
-      x: 2,
-      '÷': 2,
-    };
-
-    // Output array for postfix expression
-    const output: string[] = [];
-    // Stack for operators
-    const stack: string[] = [];
-
-    // Iterate through each token in the input tokens array
-    for (const token of tokens) {
-      // If the token is a number, add it directly to the output
-      if (!isNaN(parseFloat(token))) {
-        output.push(token);
-      } else {
-        // If the token is an operator
-        // Pop operators from the stack to the output until the stack is empty or the top of the stack has lower precedence than the current token
-        while (stack.length > 0 && precedence[token] <= precedence[stack[stack.length - 1]]) {
-          output.push(stack.pop()!);
-        }
-        // Push the current token onto the stack
-        stack.push(token);
-      }
-    }
-
-    // Pop all remaining operators from the stack to the output
-    while (stack.length > 0) {
-      output.push(stack.pop()!);
-    }
-
-    // Return the postfix expression in the form of an array of tokens
-    return output;
-  };
-
-  const evaluatePostfix = (postfix: string[]) => {
-    const stack: number[] = []; // Stack to hold operands during evaluation
-
-    for (let token of postfix) {
-      // Handle percentage calculation if token includes "%"
-      if (token.includes('%') && !isNaN(parseFloat(token))) {
-        token = (parseFloat(token) / 100).toString(); // Convert percentage to decimal
-      }
-
-      if (!isNaN(parseFloat(token))) {
-        // If token is a number, push it to the stack as a float
-        stack.push(parseFloat(token));
-      } else {
-        // If token is an operator
-        const operand2 = stack.pop()!; // Pop the top operand (second operand in postfix evaluation)
-        const operand1 = stack.pop()!; // Pop the next operand (first operand in postfix evaluation)
-
-        let result: number;
-
-        switch (token) {
-          case '+':
-            result = operand1 + operand2;
-            break;
-          case '-':
-            result = operand1 - operand2;
-            break;
-          case 'x':
-            result = operand1 * operand2;
-            break;
-          case '÷':
-            if (operand2 === 0) throw new Error('Division by zero');
-            result = operand1 / operand2;
-            break;
-          default:
-            throw new Error('Invalid operator');
-        }
-
-        // Convert result to string with up to 12 decimal places to avoid floating-point arithmetic issues
-        const resultString = result.toFixed(12);
-
-        // Parse the string back to number and push it to stack. Number() removes excess trailing zeros.
-        stack.push(Number(resultString));
-      }
-    }
-
-    // After evaluating all tokens, there should be exactly one value left in the stack, which is the result
-    if (stack.length !== 1) throw new Error('Invalid expression');
-
-    return stack.pop()!; // Return the final result from the stack
-  };
-
   const toggleSign = () => {
     if (currentEquation) {
       // Regular expression to match numbers (with optional decimal points)
@@ -229,29 +106,155 @@ export default function App() {
   };
 
   useEffect(() => {
-    const isNegativeNumber = /^-[^+\-x÷]+$/.test(currentEquation);
-    const hasOperator = /[+\-x÷]/.test(currentEquation);
-    const endsWithOperator = /[+\-x÷]$/.test(currentEquation);
+    const calculateResult = () => {
+      try {
+        // Attempt to evaluate the current equation and calculate the result
+        const result = evaluateExpression(currentEquation);
+        // Set the answer value to the result of the evaluation as a string
+        setAnswerValue(result.toString());
+      } catch (error) {
+        console.log(error);
+        // If an error occurs during evaluation (e.g., division by zero), set the answer value to "Error"
+        setAnswerValue('Error');
+      }
+    };
 
-    // hide answer text if the equation only contains a negative number
-    if (isNegativeNumber) {
-      setAnswerValue('');
-      return;
-    }
-    // if equation contains only numbers or ends with an operator
-    if (!hasOperator || endsWithOperator) {
-      setAnswerValue('');
-      return;
-    }
+    const evaluateExpression = (expression: string) => {
+      const tokens = tokenize(expression);
+      const postfix = infixToPostfix(tokens);
+      return evaluatePostfix(postfix).toString();
+    };
 
-    // If it's a valid equation, calculate the result
+    const tokenize = (expression: string) => {
+      // Regular expression to tokenize a mathematical expression:
+      // (?<!\d)    - Negative lookbehind assertion ensuring the match is not preceded by a digit.
+      //              Prevents matching hyphens that are part of negative numbers as an arithmetic operator.
+      // -?\d+      - Matches an optional minus sign followed by one or more digits (integer part).
+      // (?:\.\d+)? - Non-capturing group for an optional decimal part (. followed by one or more digits).
+      // %?         - Matches an optional percent sign (%).
+      // [+\-x/÷]   - Matches any of the arithmetic operators: +, -, x, /, ÷.
+      const regex = /(?<!\d)-?\d+(?:\.\d+)?%?|[+\-x/÷]/g;
+
+      // Use regex to tokenize the expression and return an array of tokens
+      return expression.match(regex) || [];
+    };
+
+    const infixToPostfix = (tokens: string[]) => {
+      // Operator precedence dictionary
+      const precedence: {[key: string]: number} = {
+        '+': 1,
+        '-': 1,
+        x: 2,
+        '÷': 2,
+      };
+
+      // Output array for postfix expression
+      const output: string[] = [];
+      // Stack for operators
+      const stack: string[] = [];
+
+      // Iterate through each token in the input tokens array
+      for (const token of tokens) {
+        // If the token is a number, add it directly to the output
+        if (!isNaN(parseFloat(token))) {
+          output.push(token);
+        } else {
+          // If the token is an operator
+          // Pop operators from the stack to the output until the stack is empty or the top of the stack has lower precedence than the current token
+          while (stack.length > 0 && precedence[token] <= precedence[stack[stack.length - 1]]) {
+            output.push(stack.pop()!);
+          }
+          // Push the current token onto the stack
+          stack.push(token);
+        }
+      }
+
+      // Pop all remaining operators from the stack to the output
+      while (stack.length > 0) {
+        output.push(stack.pop()!);
+      }
+
+      // Return the postfix expression in the form of an array of tokens
+      return output;
+    };
+
+    const evaluatePostfix = (postfix: string[]) => {
+      const stack: number[] = []; // Stack to hold operands during evaluation
+
+      for (let token of postfix) {
+        // Handle percentage calculation if token includes "%"
+        if (token.includes('%') && !isNaN(parseFloat(token))) {
+          token = (parseFloat(token) / 100).toString(); // Convert percentage to decimal
+        }
+
+        if (!isNaN(parseFloat(token))) {
+          // If token is a number, push it to the stack as a float
+          stack.push(parseFloat(token));
+        } else {
+          // If token is an operator
+          const operand2 = stack.pop()!; // Pop the top operand (second operand in postfix evaluation)
+          const operand1 = stack.pop()!; // Pop the next operand (first operand in postfix evaluation)
+
+          let result: number;
+
+          switch (token) {
+            case '+':
+              result = operand1 + operand2;
+              break;
+            case '-':
+              result = operand1 - operand2;
+              break;
+            case 'x':
+              result = operand1 * operand2;
+              break;
+            case '÷':
+              if (operand2 === 0) throw new Error('Division by zero');
+              result = operand1 / operand2;
+              break;
+            default:
+              throw new Error('Invalid operator');
+          }
+
+          // Convert result to string with up to 12 decimal places to avoid floating-point arithmetic issues
+          const resultString = result.toFixed(12);
+
+          // Parse the string back to number and push it to stack. Number() removes excess trailing zeros.
+          stack.push(Number(resultString));
+        }
+      }
+
+      // After evaluating all tokens, there should be exactly one value left in the stack, which is the result
+      if (stack.length !== 1) throw new Error('Invalid expression');
+
+      return stack.pop()!; // Return the final result from the stack
+    };
+    const checkEquationValidity = (equation: string) => {
+      const isNegativeNumber = /^-[^+\-x÷]+$/.test(equation);
+      const hasOperator = /[+\-x÷]/.test(equation);
+      const endsWithOperator = /[+\-x÷]$/.test(equation);
+
+      // hide answer text if the equation only contains a negative number
+      if (isNegativeNumber) {
+        setAnswerValue('');
+        return false;
+      }
+      // if equation contains only numbers or ends with an operator
+      if (!hasOperator || endsWithOperator) {
+        setAnswerValue('');
+        return false;
+      }
+
+      return true;
+    };
+
     try {
+      // If it's a valid equation, calculate the result
+      if (!checkEquationValidity(currentEquation)) return;
       calculateResult();
     } catch (error) {
       console.log(error);
       setAnswerValue('Error');
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentEquation]);
 
   const handleDelPress = () => {
