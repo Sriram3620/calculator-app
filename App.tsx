@@ -298,6 +298,7 @@ export default function App() {
 
   return (
     <SafeAreaView style={styles.container}>
+      
       <StatusBar hidden />
       <ScrollView
         ref={scrollRef}
@@ -335,10 +336,14 @@ export default function App() {
                 ]}>
                 {label}
               </Text>
+              
             </TouchableOpacity>
+            
           ))}
+          
         </View>
       ))}
+      <Text style={styles.nameUser}>calc by sriram</Text>
     </SafeAreaView>
   );
 }
@@ -355,6 +360,11 @@ const styles = StyleSheet.create({
   scrollViewContent: {
     minHeight: windowHeight / 2 / 2.5, // Minimum height before scrolling is enabled
     flex: 1,
+  },
+  nameUser:{
+    color:"white",
+    fontSize:20,
+    textAlign:"center",
   },
   displayEqnContainer: {
     justifyContent: 'flex-start', // Align content to start from top

@@ -4,10 +4,9 @@
     "slug": "calculatorApp",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -16,12 +15,17 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.sriram_maruthamuthu.calculatorApp"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+    
+    },
+    "extra": {
+      "eas": {
+        "projectId": "2f132157-6fce-4bbd-9484-bf0c42e48501"
+      }
     }
   }
 }
