@@ -30,7 +30,7 @@ Before running the app, make sure you have Node.js and Expo CLI installed on you
 1. **Clone the repository:**
 
    ```bash
-   git clone https://github.com/barnabas243/calculatorApp.git
+   git clone https://github.com/Sriram3620/calculator-app/
    cd calculatorApp
    ```
 
