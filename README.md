@@ -4,7 +4,7 @@ Submission for CM3050 Graded Assignment **3.201 Creating a calculator**.
 
 This project demonstrates a React Native calculator application that follows the [Reverse Polish Notation](https://mathworld.wolfram.com/ReversePolishNotation.html) methodology for parsing expressions, converting to postfix notation for evaluation, and handling basic operations like addition,subtraction, multiplication, division, and percentage calculations.
 
-please [Click here](https://snack.expo.dev/@barnabas243/calculatorapp) or view the expo.txt file for the link to the expo snack demo.
+please [Click here](https://snack.expo.dev/calculatorapp) or view the expo.txt file for the link to the expo snack demo.
 
 ## Table of Contents
 

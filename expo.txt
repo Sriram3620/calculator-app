@@ -1,1 +1,1 @@
-https://snack.expo.dev/@barnabas243/calculatorapp
+https://github.com/Sriram3620/calculator-app.git
